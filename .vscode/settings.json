@@ -1,0 +1,15 @@
+{
+    "files.associations": {
+        "stm32f10x.h": "c",
+        "eeprom.h": "c",
+        "crc.h": "c",
+        "spi_flash.h": "c"
+    },
+    "editor.renderWhitespace": "all",
+    "editor.tabCompletion": "on",
+    // vscode默认启用了根据文件类型自动设置tabsize的选项 不检查缩进，保存后统一按设置项來设置 false
+    "editor.detectIndentation": false,
+    // 重新设定tabsize 代码缩进修改成 2 个空格
+    "editor.tabSize": 4,
+    "files.trimTrailingWhitespace": true
+}
