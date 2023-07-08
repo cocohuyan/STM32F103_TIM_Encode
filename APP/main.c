@@ -21,9 +21,18 @@
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f10x.h"
 #include "stm32f10x_conf.h"
+#include "stm32f10x_exti.h"
+#include "stm32f10x_gpio.h"
 #include "core_cm3.h"
 #include "stdio.h"
 #include "SEGGER_RTT.h"
+
+#define             ENCODE_RESOLUTION               2000
+#define             ENCODE_TIM_DIV                  4
+#define             ENCODE_CNT_PERROUND             (ENCODE_RESOLUTION*ENCODE_TIM_DIV)
+
+#define             ENCODE_COUNT2ANGLE              (36000.0/ENCODE_CNT_PERROUND)               //角度乘100 减少误差
+#define             TIM_ENCODE_COUNT_INIT           (32768)
 
 unsigned char *P_RXD;//接收数据指针
 unsigned int Num_RXD=0;//要打印字节区位码的字节数
@@ -38,6 +47,8 @@ unsigned char JG;//数据比较结果
 
 uint32_t Signal_Fre = 0;
 uint32_t g_Time3Count = 0;
+double g_deltaAngle = 0;
+double g_curAngle = 0;
 /** @addtogroup Template_Project
   * @{
   */
@@ -97,7 +108,7 @@ void TIM2_Encoder_Init(u16 arr,u16 psc)
     TIM_ClearFlag(TIM2,TIM_FLAG_Update);//清除更新标志位
     //TIM_ITConfig(TIM2,TIM_IT_Update,ENABLE);
     TIM_ClearITPendingBit(TIM2,TIM_IT_Update); //清除中断标志位
-    TIM_SetCounter(TIM2,32768);
+    TIM_SetCounter(TIM2,TIM_ENCODE_COUNT_INIT);
     TIM_Cmd(TIM2,ENABLE);
 }
 
@@ -126,18 +137,30 @@ void TIM3_Int_Init(u16 arr,u16 psc)
     TIM_Cmd(TIM3,ENABLE);
 }
 
-/*********************************TIM3中断处理***************************************/
+/**
+ * 0.05s 一次中断
+*/
 void TIM3_IRQHandler()
 {
+    double deltaAngle;
+    int deltaCount;
     if (TIM_GetITStatus(TIM3, TIM_IT_Update) != RESET)  //检查TIM3更新中断发生与否
     {
         g_Time3Count++;
         Signal_Fre = TIM_GetCounter(TIM2);
-        Signal_Fre = (int)Signal_Fre * 20 / 4;  //定时器0.05s中断一次，并且编码器模式是4倍频，计算出编码器的速度
-        TIM_SetCounter(TIM2,32768);
+        TIM_SetCounter(TIM2,TIM_ENCODE_COUNT_INIT);
+        deltaCount = Signal_Fre - TIM_ENCODE_COUNT_INIT;
+        deltaAngle = deltaCount * ENCODE_COUNT2ANGLE;
+        g_curAngle += deltaAngle;
+        if (g_curAngle < 0) {
+            g_curAngle += 36000;
+        } else if (g_curAngle >= 36000) {
+            g_curAngle -= 36000;
+        }
+        if (g_Time3Count%10 == 0) {
+            SEGGER_RTT_printf(0,"g_curAngle=%d \r\n",(int)g_curAngle);
+        }
 
-        SEGGER_RTT_printf(0,"Signal_Fre=%d \r\n",Signal_Fre);
-        // SEGGER_RTT_printf(0,"TIM3IRQ \r\n");
         TIM_ClearITPendingBit(TIM3, TIM_IT_Update);  //清除TIMx更新中断标志
     }
 }
@@ -179,9 +202,37 @@ int main(void)
     }
 }
 
+static bool g_isFirstZPulse = TRUE;
+static double g_ZPaseAngle = 0;
+void ENCODE_ZPaseProcess(void)
+{
+    double angleDelta;
+    if (g_isFirstZPulse == TRUE) {
+        g_isFirstZPulse = FALSE;
+        g_ZPaseAngle = g_curAngle;
+        SEGGER_RTT_printf(0,"first Z pulse:g_ZPaseAngle=%d\r\n",(int)g_ZPaseAngle);
+        return;
+    }
 
+    angleDelta = g_curAngle - g_ZPaseAngle;
+    if (angleDelta > 18000) {
+        angleDelta -= 36000;
+    } else if (angleDelta < -18000) {
+        angleDelta += 36000;
+    }
+    SEGGER_RTT_printf(0,"Z pulse:angleDelta=%d, g_curAngle:%d.\r\n",(int)angleDelta, (int)g_curAngle);
+    g_curAngle = g_ZPaseAngle;
+}
 
-
+void EXTI2_IRQHandler(void)
+{
+    if (EXTI_GetITStatus(EXTI_Line2) == SET)
+    {
+        //这里写中断处理的一些内容：
+        EXTI_ClearITPendingBit(EXTI_Line2);
+        ENCODE_ZPaseProcess();
+    }
+}
 #ifdef  USE_FULL_ASSERT
 
 /**

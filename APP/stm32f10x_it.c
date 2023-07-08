@@ -23,6 +23,8 @@
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f10x_it.h"
 
+
+
 /** @addtogroup Template_Project
   * @{
   */
@@ -164,7 +166,7 @@ void SysTick_Handler(void)     //一毫秒系统中断
     TimingDelay_Decrement();
 
     //获取按键按下的按键值
-    Key0=GPIO_ReadInputDataBit(GPIOA,GPIO_Pin_0);
+    Key0 = GPIO_ReadInputDataBit(GPIOA,GPIO_Pin_0);
 }
 
 /******************************************************************************/
@@ -284,7 +286,6 @@ void TIM2_IRQHandler(void)
 
 
 }
-
 
 
 /**

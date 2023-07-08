@@ -460,11 +460,11 @@ ARM Macro Assembler    Page 8
 
 
 ork --depend=.\output\startup_stm32f10x_md.d -o.\output\startup_stm32f10x_md.o 
--ID:\Projects\STM32_Encoder\MDK-Proj\RTE -ID:\Program\KeilV5\ARM\PACK\Keil\STM3
-2F1xx_DFP\1.0.5\Device\Include -ID:\Program\KeilV5\ARM\CMSIS\Include --predefin
-e="__MICROLIB SETA 1" --predefine="__UVISION_VERSION SETA 514" --predefine="STM
-32F10X_MD SETA 1" --list=.\startup_stm32f10x_md.lst ..\Libraries\CMSIS\Core\CM3
-\startup\arm\startup_stm32f10x_md.s
+-ID:\Projects\STM32_TIMEncoder\STM32F103_TIM_Encode\MDK-Proj\RTE -ID:\Program\K
+eilV5\ARM\PACK\Keil\STM32F1xx_DFP\1.0.5\Device\Include -ID:\Program\KeilV5\ARM\
+CMSIS\Include --predefine="__MICROLIB SETA 1" --predefine="__UVISION_VERSION SE
+TA 514" --predefine="STM32F10X_MD SETA 1" --list=.\startup_stm32f10x_md.lst ..\
+Libraries\CMSIS\Core\CM3\startup\arm\startup_stm32f10x_md.s
 
 
 
