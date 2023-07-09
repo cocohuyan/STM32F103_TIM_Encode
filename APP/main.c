@@ -26,6 +26,7 @@
 #include "core_cm3.h"
 #include "stdio.h"
 #include "SEGGER_RTT.h"
+#include "SEQueue.h"
 
 #define             ENCODE_RESOLUTION               2000
 #define             ENCODE_TIM_DIV                  4
@@ -65,10 +66,20 @@ double g_curAngle = 0;
 /* Private function prototypes -----------------------------------------------*/
 
 //void Delay(int nCount);
-int fputc(int ch, FILE *f)
+void USART1_Send_Buf(const unsigned char* u8buf, const unsigned short u16len)
 {
-  ITM_SendChar(ch);
-  return ch;
+    unsigned short i = 0;
+
+    if(NULL == u8buf)
+    {
+        return;
+    }
+
+    for(i = 0; i < u16len; i++)
+    {
+        USART_SendData(USART1, (uint8_t)u8buf[i]);
+        while(RESET == USART_GetFlagStatus(USART1, USART_FLAG_TXE));
+    }
 }
 
 
@@ -166,6 +177,12 @@ void TIM3_IRQHandler()
 }
 
 
+void Usart1Receive(u8 chbyte)
+{
+    uint16_t i=0;
+    uint8_t u8checksum = 0x00;		//
+}
+
 /**
   * @brief  Main program.
   * @param  None
@@ -173,6 +190,7 @@ void TIM3_IRQHandler()
   */
 int main(void)
 {
+    uint8_t info = 0;
     /* Setup STM32 system (clock, PLL and Flash configuration) */
     SystemInit();
 
@@ -198,6 +216,11 @@ int main(void)
             LED0_ON();//LED亮
         } else if (g_Time3Count%10 == 0) {
             LED0_OFF();//LED亮
+        }
+
+        if(DeSEQueue(&g_Queue[0], &info))   //从队列中出队
+        {
+            Usart1Receive(info);
         }
     }
 }

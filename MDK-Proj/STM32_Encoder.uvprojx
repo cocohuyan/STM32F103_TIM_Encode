@@ -563,15 +563,10 @@
               <FileType>1</FileType>
               <FilePath>..\APP\BSP_Config.c</FilePath>
             </File>
-          </Files>
-        </Group>
-        <Group>
-          <GroupName>Sprint</GroupName>
-          <Files>
             <File>
-              <FileName>send_DATA.c</FileName>
+              <FileName>SEQueue.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\APP\Sprint\send_DATA.c</FilePath>
+              <FilePath>..\APP\SEQueue.c</FilePath>
             </File>
           </Files>
         </Group>

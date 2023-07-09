@@ -22,7 +22,8 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f10x_it.h"
-
+#include "stm32f10x_usart.h"
+#include "SEQueue.h"
 
 
 /** @addtogroup Template_Project
@@ -164,9 +165,6 @@ unsigned int Time_delay=0;
 void SysTick_Handler(void)     //一毫秒系统中断
 {
     TimingDelay_Decrement();
-
-    //获取按键按下的按键值
-    Key0 = GPIO_ReadInputDataBit(GPIOA,GPIO_Pin_0);
 }
 
 /******************************************************************************/
@@ -184,14 +182,6 @@ void SysTick_Handler(void)     //一毫秒系统中断
 /*void PPP_IRQHandler(void)
 {
 }*/
-
-
-
-
-
-
-
-
 
 /******************************************************************************/
 /*            STM32F10x Peripherals Interrupt Handlers                        */
@@ -213,34 +203,14 @@ void SysTick_Handler(void)     //一毫秒系统中断
 ***********************************************************************/
 void USART1_IRQHandler(void)
 {
-
-  if(1== GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_0))
-  {
-       LED0_ON();
-  }
-  else
-  {
-       LED0_OFF();
-  }
-
-  if(USART_GetITStatus(USART1, USART_IT_RXNE) != RESET)     //检查指定的USART中断发生与否
-  {
-
-    *P_RXD=USART_ReceiveData(USART1); //读取接收缓冲区数据。    /* Read one byte from the receive data register */
-     P_RXD++;
-     Num_RXD++;
-
-     if(Num_RXD>=255)    //防止数据溢出
-     {
-         Num_RXD=0;
-        P_RXD=RxBuffer;//指向接收数据缓冲区
-
+    unsigned char  u8tmp = 0;
+    if(RESET != USART_GetITStatus(USART1, USART_IT_RXNE))
+    {
+        u8tmp = (unsigned char)USART_ReceiveData(USART1);
+        EnSEQueue(&g_Queue[0],u8tmp); //
     }
-  }
-
-
+    USART_ClearFlag(USART1,USART_IT_RXNE);
 }
-
 
  /*******************************************************************************
 * Function Name  : TIM2_IRQHandler
@@ -249,48 +219,19 @@ void USART1_IRQHandler(void)
 * Output         : None
 * Return         : None
 *******************************************************************************/
-
-uint16_t capture = 0;
-
-extern __IO uint16_t CCR1_Val;
-
-extern __IO uint16_t CCR2_Val;
-
-
 void TIM2_IRQHandler(void)
 {
-  if (TIM_GetITStatus(TIM2, TIM_IT_CC1) != RESET) //检查指定的TIM中断发生与否
-  {
-    TIM_ClearITPendingBit(TIM2, TIM_IT_CC1);//清除TIMx的中断待处理位
-
-    /* Pin PC.06 toggling with frequency = 73.24 Hz */
-    //GPIO_WriteBit(GPIOC, GPIO_Pin_6, (BitAction)(1 - GPIO_ReadOutputDataBit(GPIOC, GPIO_Pin_6)));
-    capture = TIM_GetCapture1(TIM2); //获得TIMx输入捕获1的值
-    TIM_SetCompare1(TIM2, capture + CCR1_Val);//设置TIMx捕获比较1寄存器值
-
-
-  }
-  else if (TIM_GetITStatus(TIM2, TIM_IT_CC2) != RESET)
-  {
-    TIM_ClearITPendingBit(TIM2, TIM_IT_CC2);
-
-    /* Pin PC.07 toggling with frequency = 109.8 Hz */
-    //GPIO_WriteBit(GPIOC, GPIO_Pin_7, (BitAction)(1 - GPIO_ReadOutputDataBit(GPIOC, GPIO_Pin_7)));
-    capture = TIM_GetCapture2(TIM2);
-    TIM_SetCompare2(TIM2, capture + CCR2_Val);
-  }
-
-  capture = TIM_GetCounter(TIM2);
-
-  TIM_SetCounter(TIM2, 0);
-
-
+    if (TIM_GetITStatus(TIM2, TIM_IT_CC1) != RESET) //检查指定的TIM中断发生与否
+    {
+        TIM_ClearITPendingBit(TIM2, TIM_IT_CC1);//清除TIMx的中断待处理位
+    }
+    else if (TIM_GetITStatus(TIM2, TIM_IT_CC2) != RESET)
+    {
+        TIM_ClearITPendingBit(TIM2, TIM_IT_CC2);
+    }
 }
-
 
 /**
   * @}
   */
-
-
 /******************* (C) COPYRIGHT 2009 STMicroelectronics *****END OF FILE****/
