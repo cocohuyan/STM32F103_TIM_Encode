@@ -5,11 +5,9 @@
 //#include "usart.h"
 #include "SEGGER_RTT.h"
 
-
 int16_t Signal_Fre = 0;
 
-
-int main(void)
+int main_test(void)
 {
     delay_init();             //延时函数初始化
     NVIC_PriorityGroupConfig(NVIC_PriorityGroup_2);      //设置NVIC中断分组2:2位抢占优先级，2位响应优先级
@@ -40,95 +38,7 @@ int main(void)
 
 extern int16_t Signal_Fre;
 
-///
-//TIM2--编码器模式
-//TIM3--0.05秒定时-计算编码器速度
-//TIM8--PWM互补输出
-///
 
-/***************TIM2初始化********************/
-//通用定时器2--编码器模式，PA0，PA1；
-//arr：自动重装值
-//psc：时钟预分频数
-void TIM2_Encoder_Init(u16 arr,u16 psc)
-{
-    GPIO_InitTypeDef GPIO_InitStructure;
-    TIM_TimeBaseInitTypeDef  TIM_TimeBaseStructure;
-    TIM_ICInitTypeDef  TIM_ICInitStructure;
-
-    RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM2, ENABLE);    //使能定时器2时钟
-    RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA, ENABLE);
-
-    GPIO_InitStructure.GPIO_Mode=GPIO_Mode_IN_FLOATING;//浮空输入
-    GPIO_InitStructure.GPIO_Pin=GPIO_Pin_0;
-    GPIO_InitStructure.GPIO_Speed=GPIO_Speed_50MHz;
-    GPIO_Init(GPIOA,&GPIO_InitStructure);
-
-    GPIO_InitStructure.GPIO_Mode=GPIO_Mode_IN_FLOATING;//浮空输入
-    GPIO_InitStructure.GPIO_Pin=GPIO_Pin_1;
-    GPIO_InitStructure.GPIO_Speed=GPIO_Speed_50MHz;
-    GPIO_Init(GPIOA,&GPIO_InitStructure);
-
-    TIM_TimeBaseStructure.TIM_ClockDivision=TIM_CKD_DIV1;
-    TIM_TimeBaseStructure.TIM_CounterMode=TIM_CounterMode_Up;
-    TIM_TimeBaseStructure.TIM_Period=arr;
-    TIM_TimeBaseStructure.TIM_Prescaler=psc;
-    TIM_TimeBaseInit(TIM2,&TIM_TimeBaseStructure);
-
-    TIM_EncoderInterfaceConfig(TIM2,TIM_EncoderMode_TI12,TIM_ICPolarity_BothEdge,TIM_ICPolarity_BothEdge); //编码器模式
-    TIM_ICStructInit(&TIM_ICInitStructure);
-    //TIM_ICInitStructure.TIM_Channel=TIM_Channel_1;
-    TIM_ICInitStructure.TIM_ICFilter=6;
-    //TIM_ICInitStructure.TIM_ICPolarity=TIM_ICPolarity_Rising;
-    //TIM_ICInitStructure.TIM_ICPrescaler=TIM_ICPSC_DIV1;
-    //TIM_ICInitStructure.TIM_ICSelection=TIM_ICSelection_DirectTI;
-    TIM_ICInit(TIM2,&TIM_ICInitStructure);
-    TIM_ClearFlag(TIM2,TIM_FLAG_Update);//清除更新标志位
-    //TIM_ITConfig(TIM2,TIM_IT_Update,ENABLE);
-    TIM_ClearITPendingBit(TIM2,TIM_IT_Update); //清除中断标志位
-    TIM_SetCounter(TIM2,32768);
-    TIM_Cmd(TIM2,ENABLE);
-}
-
-/****************************TIM3初始化*********************************************/
-void TIM3_Int_Init(u16 arr,u16 psc)
-{
-    TIM_TimeBaseInitTypeDef TIM_TimeBaseStructure;
-    NVIC_InitTypeDef NVIC_InitStructure;
-
-    RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM3,ENABLE);
-
-    TIM_TimeBaseStructure.TIM_ClockDivision=TIM_CKD_DIV1;
-    TIM_TimeBaseStructure.TIM_CounterMode=TIM_CounterMode_Up;
-    TIM_TimeBaseStructure.TIM_Period=arr;
-    TIM_TimeBaseStructure.TIM_Prescaler=psc;
-    TIM_TimeBaseInit(TIM3,&TIM_TimeBaseStructure);
-
-    TIM_ITConfig(TIM3,TIM_IT_Update,ENABLE ); //使能指定的TIM3中断,允许更新中断
-
-    NVIC_InitStructure.NVIC_IRQChannel=TIM3_IRQn;
-    NVIC_InitStructure.NVIC_IRQChannelCmd=ENABLE;
-    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority=0;
-    NVIC_InitStructure.NVIC_IRQChannelSubPriority=3;
-    NVIC_Init(&NVIC_InitStructure);
-
-    TIM_Cmd(TIM3,ENABLE);
-}
-
-/*********************************TIM3中断处理***************************************/
-void TIM3_IRQHandler()
-{
-  if (TIM_GetITStatus(TIM3, TIM_IT_Update) != RESET)  //检查TIM3更新中断发生与否
-    {
-        Signal_Fre = TIM_GetCounter(TIM2);
-        Signal_Fre = (int)Signal_Fre * 20 / 4;  //定时器0.05s中断一次，并且编码器模式是4倍频，计算出编码器的速度
-        TIM_SetCounter(TIM2,32768);
-
-        SEGGER_RTT_printf(0,"Signal_Fre=%d \r\n",Signal_Fre);
-        SEGGER_RTT_printf(0,"TIM3IRQ \r\n");
-        TIM_ClearITPendingBit(TIM3, TIM_IT_Update);  //清除TIMx更新中断标志
-    }
-}
 
 
 /********************TIM8初始化***********************/

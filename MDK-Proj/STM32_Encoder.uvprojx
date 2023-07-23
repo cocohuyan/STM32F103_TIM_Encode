@@ -568,35 +568,30 @@
               <FileType>1</FileType>
               <FilePath>..\APP\SEQueue.c</FilePath>
             </File>
-          </Files>
-        </Group>
-        <Group>
-          <GroupName>CRC</GroupName>
-          <Files>
             <File>
-              <FileName>CRC.c</FileName>
+              <FileName>systick.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\APP\CRC.c</FilePath>
+              <FilePath>..\APP\systick.c</FilePath>
             </File>
-          </Files>
-        </Group>
-        <Group>
-          <GroupName>OLED</GroupName>
-          <Files>
             <File>
-              <FileName>oled.c</FileName>
+              <FileName>uart.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\APP\oled.c</FilePath>
+              <FilePath>..\APP\uart.c</FilePath>
             </File>
-          </Files>
-        </Group>
-        <Group>
-          <GroupName>Eeprom</GroupName>
-          <Files>
             <File>
-              <FileName>Eeprom.c</FileName>
+              <FileName>pwm.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\APP\Eeprom.c</FilePath>
+              <FilePath>..\APP\pwm.c</FilePath>
+            </File>
+            <File>
+              <FileName>calibration.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\APP\calibration.c</FilePath>
+            </File>
+            <File>
+              <FileName>motor_control.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\APP\motor_control.c</FilePath>
             </File>
           </Files>
         </Group>

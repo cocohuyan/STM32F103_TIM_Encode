@@ -21,9 +21,12 @@
   */
 
 /* Includes ------------------------------------------------------------------*/
+#include "stm32f10x.h"
 #include "stm32f10x_it.h"
 #include "stm32f10x_usart.h"
-#include "SEQueue.h"
+#include "stm32f10x_conf.h"
+#include "stm32f10x_exti.h"
+#include "stm32f10x_gpio.h"
 
 
 /** @addtogroup Template_Project
@@ -160,12 +163,6 @@ extern unsigned char LED0_State;
 extern unsigned char LED1_State;
 
 
-unsigned int Time_delay=0;
-
-void SysTick_Handler(void)     //一毫秒系统中断
-{
-    TimingDelay_Decrement();
-}
 
 /******************************************************************************/
 /*                 STM32F10x Peripherals Interrupt Handlers                   */
@@ -192,25 +189,7 @@ void SysTick_Handler(void)     //一毫秒系统中断
   * @param  None
   * @retval : None
   */
-/**********************************************************************
-* 名    称：USART1_IRQHandler()
-* 功    能：USART1中断
-* 入口参数：
-* 出口参数：
-* 全局变量：
------------------------------------------------------------------------
-* 说明：
-***********************************************************************/
-void USART1_IRQHandler(void)
-{
-    unsigned char  u8tmp = 0;
-    if(RESET != USART_GetITStatus(USART1, USART_IT_RXNE))
-    {
-        u8tmp = (unsigned char)USART_ReceiveData(USART1);
-        EnSEQueue(&g_Queue[0],u8tmp); //
-    }
-    USART_ClearFlag(USART1,USART_IT_RXNE);
-}
+
 
  /*******************************************************************************
 * Function Name  : TIM2_IRQHandler

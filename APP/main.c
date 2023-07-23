@@ -27,29 +27,13 @@
 #include "stdio.h"
 #include "SEGGER_RTT.h"
 #include "SEQueue.h"
+#include "pwm.h"
+#include "systick.h"
+#include "uart.h"
+#include "calibration.h"
+#include "encode.h"
+#include "motor_control.h"
 
-#define             ENCODE_RESOLUTION               2000
-#define             ENCODE_TIM_DIV                  4
-#define             ENCODE_CNT_PERROUND             (ENCODE_RESOLUTION*ENCODE_TIM_DIV)
-
-#define             ENCODE_COUNT2ANGLE              (36000.0/ENCODE_CNT_PERROUND)               //角度乘100 减少误差
-#define             TIM_ENCODE_COUNT_INIT           (32768)
-
-unsigned char *P_RXD;//接收数据指针
-unsigned int Num_RXD=0;//要打印字节区位码的字节数
-unsigned char TxBuffer[64]={0,2,3,};//串口发送缓冲区
-unsigned char RxBuffer[64]; //串口接收缓冲区
-unsigned char Key0=0;
-unsigned char Key0_Value=0;
-unsigned char Key0_State=0;
-unsigned char LED0_State=0;
-unsigned char t;
-unsigned char JG;//数据比较结果
-
-uint32_t Signal_Fre = 0;
-uint32_t g_Time3Count = 0;
-double g_deltaAngle = 0;
-double g_curAngle = 0;
 /** @addtogroup Template_Project
   * @{
   */
@@ -60,68 +44,7 @@ double g_curAngle = 0;
 /* Private variables ---------------------------------------------------------*/
 /* Private function prototypes -----------------------------------------------*/
 /* Private functions ---------------------------------------------------------*/
-
-
-
 /* Private function prototypes -----------------------------------------------*/
-
-//void Delay(int nCount);
-void USART1_Send_Buf(const unsigned char* u8buf, const unsigned short u16len)
-{
-    unsigned short i = 0;
-
-    if(NULL == u8buf)
-    {
-        return;
-    }
-
-    for(i = 0; i < u16len; i++)
-    {
-        USART_SendData(USART1, (uint8_t)u8buf[i]);
-        while(RESET == USART_GetFlagStatus(USART1, USART_FLAG_TXE));
-    }
-}
-
-
-void TIM2_Encoder_Init(u16 arr,u16 psc)
-{
-    GPIO_InitTypeDef GPIO_InitStructure;
-    TIM_TimeBaseInitTypeDef  TIM_TimeBaseStructure;
-    TIM_ICInitTypeDef  TIM_ICInitStructure;
-
-    RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM2, ENABLE);        //使能定时器2时钟
-    RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA, ENABLE);
-
-    GPIO_InitStructure.GPIO_Mode=GPIO_Mode_IN_FLOATING;         //浮空输入
-    GPIO_InitStructure.GPIO_Pin=GPIO_Pin_0;
-    GPIO_InitStructure.GPIO_Speed=GPIO_Speed_50MHz;
-    GPIO_Init(GPIOA,&GPIO_InitStructure);
-
-    GPIO_InitStructure.GPIO_Mode=GPIO_Mode_IN_FLOATING;         //浮空输入
-    GPIO_InitStructure.GPIO_Pin=GPIO_Pin_1;
-    GPIO_InitStructure.GPIO_Speed=GPIO_Speed_50MHz;
-    GPIO_Init(GPIOA,&GPIO_InitStructure);
-
-    TIM_TimeBaseStructure.TIM_ClockDivision=TIM_CKD_DIV1;
-    TIM_TimeBaseStructure.TIM_CounterMode=TIM_CounterMode_Up;
-    TIM_TimeBaseStructure.TIM_Period=arr;
-    TIM_TimeBaseStructure.TIM_Prescaler=psc;
-    TIM_TimeBaseInit(TIM2,&TIM_TimeBaseStructure);
-
-    TIM_EncoderInterfaceConfig(TIM2,TIM_EncoderMode_TI12,TIM_ICPolarity_Rising,TIM_ICPolarity_Rising); //编码器模式
-    TIM_ICStructInit(&TIM_ICInitStructure);
-    //TIM_ICInitStructure.TIM_Channel=TIM_Channel_1;
-    TIM_ICInitStructure.TIM_ICFilter=6;
-    //TIM_ICInitStructure.TIM_ICPolarity=TIM_ICPolarity_Rising;
-    //TIM_ICInitStructure.TIM_ICPrescaler=TIM_ICPSC_DIV1;
-    //TIM_ICInitStructure.TIM_ICSelection=TIM_ICSelection_DirectTI;
-    TIM_ICInit(TIM2,&TIM_ICInitStructure);
-    TIM_ClearFlag(TIM2,TIM_FLAG_Update);//清除更新标志位
-    //TIM_ITConfig(TIM2,TIM_IT_Update,ENABLE);
-    TIM_ClearITPendingBit(TIM2,TIM_IT_Update); //清除中断标志位
-    TIM_SetCounter(TIM2,TIM_ENCODE_COUNT_INIT);
-    TIM_Cmd(TIM2,ENABLE);
-}
 
 /****************************TIM3初始化*********************************************/
 void TIM3_Int_Init(u16 arr,u16 psc)
@@ -153,36 +76,14 @@ void TIM3_Int_Init(u16 arr,u16 psc)
 */
 void TIM3_IRQHandler()
 {
-    double deltaAngle;
-    int deltaCount;
     if (TIM_GetITStatus(TIM3, TIM_IT_Update) != RESET)  //检查TIM3更新中断发生与否
     {
-        g_Time3Count++;
-        Signal_Fre = TIM_GetCounter(TIM2);
-        TIM_SetCounter(TIM2,TIM_ENCODE_COUNT_INIT);
-        deltaCount = Signal_Fre - TIM_ENCODE_COUNT_INIT;
-        deltaAngle = deltaCount * ENCODE_COUNT2ANGLE;
-        g_curAngle += deltaAngle;
-        if (g_curAngle < 0) {
-            g_curAngle += 36000;
-        } else if (g_curAngle >= 36000) {
-            g_curAngle -= 36000;
-        }
-        if (g_Time3Count%10 == 0) {
-            SEGGER_RTT_printf(0,"g_curAngle=%d \r\n",(int)g_curAngle);
-        }
-
         TIM_ClearITPendingBit(TIM3, TIM_IT_Update);  //清除TIMx更新中断标志
     }
 }
 
-
-void Usart1Receive(u8 chbyte)
-{
-    uint16_t i=0;
-    uint8_t u8checksum = 0x00;		//
-}
-
+uint16_t comparedata = 8000;
+uint32_t lasttick = 0;
 /**
   * @brief  Main program.
   * @param  None
@@ -193,58 +94,41 @@ int main(void)
     uint8_t info = 0;
     /* Setup STM32 system (clock, PLL and Flash configuration) */
     SystemInit();
-
     RCC_Configuration();
-
     NVIC_Configuration();
-
     GPIO_Configuration();
+    SysTick_init();                             //延时初始化
+    // SPI2_Init();                                //初始化SPI硬件口
+    USART_Configuration();                      //USART1配置
 
-    SysTick_init();                              //延时初始化
-
-    SPI2_Init();                                //初始化SPI硬件口
-
-    USART_Configuration();  //USART1配置
-
-    TIM2_Encoder_Init(65535,0); //定时器2编码器模式
+    TIM1_PWM_Init();
+    //TIM2_Encoder_Init(65535,0); //定时器2编码器模式
     TIM3_Int_Init(4999,719);//0.05s定时器溢出中断
 
+    MotorControlInit();
     /* Infinite loop */
-    while (1)
-    {
-        if (g_Time3Count%20 == 0) {
-            LED0_ON();//LED亮
-        } else if (g_Time3Count%10 == 0) {
-            LED0_OFF();//LED亮
+    while (1) {
+        uint32_t tick = GetSystick();
+        if (tick%5000 == 0 && tick !=lasttick) {
+            lasttick = tick;
+            //TIM_SetCompare2(TIM1, comparedata);
+            comparedata += 1000;
+            SEGGER_RTT_printf(0,"TIM_SetCompare1 %d!\r\n", comparedata);
         }
 
-        if(DeSEQueue(&g_Queue[0], &info))   //从队列中出队
-        {
-            Usart1Receive(info);
+        if (DeSEQueue(&g_Queue[0], &info)) {   //从队列中出队
+            USART1_Receive(info);
         }
     }
 }
 
-static bool g_isFirstZPulse = TRUE;
-static double g_ZPaseAngle = 0;
 void ENCODE_ZPaseProcess(void)
 {
-    double angleDelta;
-    if (g_isFirstZPulse == TRUE) {
-        g_isFirstZPulse = FALSE;
-        g_ZPaseAngle = g_curAngle;
-        SEGGER_RTT_printf(0,"first Z pulse:g_ZPaseAngle=%d\r\n",(int)g_ZPaseAngle);
-        return;
+    TIM_SetCounter(TIM2,TIM_ENCODE_COUNT_INIT);
+    if (MotorGetControlStatus() == STATE_NO_CALIB) {
+        MotorSetControlStatus(STATE_STOP);
     }
-
-    angleDelta = g_curAngle - g_ZPaseAngle;
-    if (angleDelta > 18000) {
-        angleDelta -= 36000;
-    } else if (angleDelta < -18000) {
-        angleDelta += 36000;
-    }
-    SEGGER_RTT_printf(0,"Z pulse:angleDelta=%d, g_curAngle:%d.\r\n",(int)angleDelta, (int)g_curAngle);
-    g_curAngle = g_ZPaseAngle;
+    SEGGER_RTT_printf(0,"---------------Z pulse--------------!\r\n");
 }
 
 void EXTI2_IRQHandler(void)
@@ -252,8 +136,19 @@ void EXTI2_IRQHandler(void)
     if (EXTI_GetITStatus(EXTI_Line2) == SET)
     {
         //这里写中断处理的一些内容：
-        EXTI_ClearITPendingBit(EXTI_Line2);
+
         ENCODE_ZPaseProcess();
+        EXTI_ClearITPendingBit(EXTI_Line2);
+    }
+}
+
+void EXTI0_IRQHandler(void)
+{
+    if (EXTI_GetITStatus(EXTI_Line0) == SET)
+    {
+        //这里写中断处理的一些内容：
+        ENCODE_ZPaseProcess();
+        EXTI_ClearITPendingBit(EXTI_Line0);
     }
 }
 #ifdef  USE_FULL_ASSERT

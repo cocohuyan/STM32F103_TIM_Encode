@@ -5,7 +5,7 @@
 #include "stm32f10x_exti.h"
 #include "stm32f10x_gpio.h"
 #include "stm32f10x_rcc.h"
-#include "stm32f10x_usart.h"
+
 /*******************************************************************************
                             初始化通用IO口
 ********************************************************************************/
@@ -22,11 +22,23 @@ void GPIO_Configuration(void)
     GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
     GPIO_Init(GPIOC, &GPIO_InitStructure);
 
-    //PA2初始化
+    //PA0初始化 作为外部中断EXTI0
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA, ENABLE);
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_AFIO, ENABLE);
 
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPU;
+    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0;
+    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+    GPIO_Init(GPIOA, &GPIO_InitStructure);
+
+    GPIO_EXTILineConfig(GPIO_PortSourceGPIOA, GPIO_PinSource0);
+
+    EXTI_InitStructure.EXTI_Line = EXTI_Line0;
+    EXTI_InitStructure.EXTI_LineCmd = ENABLE;
+    EXTI_InitStructure.EXTI_Mode = EXTI_Mode_Interrupt;
+    EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Falling;
+    EXTI_Init(&EXTI_InitStructure);
+
     GPIO_InitStructure.GPIO_Pin = GPIO_Pin_2;
     GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
     GPIO_Init(GPIOA, &GPIO_InitStructure);
@@ -36,7 +48,7 @@ void GPIO_Configuration(void)
     EXTI_InitStructure.EXTI_Line = EXTI_Line2;
     EXTI_InitStructure.EXTI_LineCmd = ENABLE;
     EXTI_InitStructure.EXTI_Mode = EXTI_Mode_Interrupt;
-    EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Rising;
+    EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Falling;
     EXTI_Init(&EXTI_InitStructure);
 
     /*********************初始化串口IO配置**********************************/
@@ -114,58 +126,13 @@ void NVIC_Configuration(void)
     NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0;
     NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
     NVIC_Init(&NVIC_InitStructure);
+
+    NVIC_InitStructure.NVIC_IRQChannel = EXTI0_IRQn;
+    NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0;
+    NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
+    NVIC_Init(&NVIC_InitStructure);
 }
-
-
-
-
-/**********************************************************************
-* 名    称：USART_Configuration()
-* 功    能：串口配置
-* 入口参数：
-* 出口参数：
------------------------------------------------------------------------
-* 说明：串口初始化函数
-***********************************************************************/
-void USART_Configuration(void)
-{
-/* USART1 and USART1 configuration ------------------------------------------------------*/
-    /* USART and USART1 configured as follow:
-            - BaudRate = 9600 baud
-            - Word Length = 8 Bits
-            - One Stop Bit
-            - No parity
-            - Hardware flow control disabled (RTS and CTS signals)
-            - Receive and transmit enabled
-    */
-
-    USART_InitTypeDef USART_InitStructure;
-    //USART_ClockInitTypeDef  USART_InitClock;                        //定义串口初始化时钟结构体
-
-    USART_InitStructure.USART_BaudRate = 9600;//9600;
-    USART_InitStructure.USART_WordLength = USART_WordLength_8b;
-    USART_InitStructure.USART_StopBits = USART_StopBits_1;
-    USART_InitStructure.USART_Parity = USART_Parity_No;
-    USART_InitStructure.USART_HardwareFlowControl = USART_HardwareFlowControl_None;
-    USART_InitStructure.USART_Mode = USART_Mode_Rx | USART_Mode_Tx;
-
-    //USART_InitClock.USART_Clock = USART_Clock_Disable;                 //串口时钟禁止
-    //USART_InitClock.USART_CPOL = USART_CPOL_Low;                         //时钟下降沿有效
-    //USART_InitClock.USART_CPHA = USART_CPHA_2Edge;                    //数据在第二个时钟沿捕捉
-    //USART_InitClock.USART_LastBit = USART_LastBit_Disable;            //最后数据位的时钟脉冲不输出到SCLK引脚
-
-    //USART_ClockInit(USART1,&USART_InitClock);//初始化USART1外围时钟，按照 USART_ClockInitStruct 内的参数.
-
-    /* Configure USART1 */
-    USART_Init(USART1, &USART_InitStructure);
-
-    /* Enable USART1 Receive and Transmit interrupts */
-    USART_ITConfig(USART1, USART_IT_RXNE, ENABLE);
-
-    /* Enable the USART1 */
-    USART_Cmd(USART1, ENABLE);
-}
-
 
 unsigned short int CCR1_Val = 49152;    //0xC000
 unsigned short int CCR2_Val = 32768;    //0x8000
@@ -337,50 +304,6 @@ void SPI2_Init(void)           //硬件SPI2口初始化
     /* Enable SPI2  */
     SPI_Cmd(SPI2, ENABLE);
 }
-
-static unsigned int TimingDelay;
-
-void SysTick_init(void)
-{
-
-    SysTick_Config(SystemFrequency / 1000);
-
-}
-
- /**
-  * @brief  Inserts a delay time.
-  * @param nTime: specifies the delay time length, in milliseconds.
-  * @retval : None
-  */
-void delay_ms(unsigned int nTime)
-{
-  TimingDelay = nTime;
-
-  while(TimingDelay != 0);
-}
-
-/**
-  * @brief  Decrements the TimingDelay variable.
-  * @param  None
-  * @retval : None
-  */
-void TimingDelay_Decrement(void)
-{
-  if (TimingDelay != 0x00)
-  {
-    TimingDelay--;
-  }
-}
-
-
-
-
-
-
-
-
-
-
 
 /*************************************************
 函数功能：硬件SPI口发送或者接收一个字节数据

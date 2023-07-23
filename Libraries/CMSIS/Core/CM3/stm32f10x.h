@@ -36,20 +36,8 @@
   * @{
   */
 #include "stdio.h"//
-
 #include "string.h"
-
 #include "BSP_Config.h"
-
-#include "send_DATA.h"
-
-#include  "CRC.H"
-
-
-#include "oled.h"
-
-#include "Eeprom.h"
-
 
 /* Uncomment the line below according to the target STM32 device used in your
    application
