@@ -12,5 +12,6 @@
 
 void TIM2_Encoder_Init(uint16_t arr,uint16_t psc);
 uint16_t Encode_UpdateAngle(void);
+uint32_t IC_GetFreq(void);
 
 #endif /* _ENCODE_H_ */

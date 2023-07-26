@@ -6,7 +6,7 @@
 
 #define PWM_DUTY_MAX         84
 #define PWM_DUTY_MIN         55
-#define PWM_DUTY_CALI        75
+#define PWM_DUTY_CALI        80
 
 #define PID_ANGLE_MAX        36000
 #define PID_ANGLE_ERROR_MAX  18000
@@ -122,10 +122,7 @@ void MotorTickProcess(void)
         default:
             break;
     }
-
-
 }
-
 
 State_t MotorGetControlStatus(void)
 {
@@ -140,5 +137,14 @@ void MotorSetControlStatus(State_t state)
 void MotorControlInit(void)
 {
     g_control.state = STATE_NO_CALIB;
+    g_control.pid.kp = 10;
+    g_control.pid.ki = 0.01;
+    g_control.pid.kd = -0.1;
+}
 
+void MotorSetControlAngle(uint16_t angle)
+{
+    g_control._Angle = angle;
+
+    MotorSetControlStatus(STATE_RUNNING);
 }

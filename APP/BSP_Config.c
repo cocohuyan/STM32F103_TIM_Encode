@@ -23,7 +23,6 @@ void GPIO_Configuration(void)
     GPIO_Init(GPIOC, &GPIO_InitStructure);
 
     //PA0初始化 作为外部中断EXTI0
-    RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA, ENABLE);
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_AFIO, ENABLE);
 
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPU;
@@ -50,18 +49,6 @@ void GPIO_Configuration(void)
     EXTI_InitStructure.EXTI_Mode = EXTI_Mode_Interrupt;
     EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Falling;
     EXTI_Init(&EXTI_InitStructure);
-
-    /*********************初始化串口IO配置**********************************/
-    /* Configure USART1 Rx (PA.10) as input floating */
-    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_10;
-    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN_FLOATING;
-    GPIO_Init(GPIOA, &GPIO_InitStructure);
-
-    /* Configure USART1 Tx (PA.09) as alternate function push-pull */
-    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_9;
-    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;
-    GPIO_Init(GPIOA, &GPIO_InitStructure);
 }
 
 /*******************************************************************************
@@ -72,10 +59,10 @@ void RCC_Configuration(void)
 
 /* Enable peripheral clocks --------------------------------------------------*/
     /* Enable DMA1 clock */
-    RCC_AHBPeriphClockCmd(RCC_AHBPeriph_DMA1, ENABLE);
+    // RCC_AHBPeriphClockCmd(RCC_AHBPeriph_DMA1, ENABLE);
 
     /* Enable  clock */
-    RCC_APB2PeriphClockCmd(RCC_APB2Periph_USART1, ENABLE);      //使能串口1的时钟
+    // RCC_APB2PeriphClockCmd(RCC_APB2Periph_USART1, ENABLE);      //使能串口1的时钟
 
     /* TIM2 clock enable */
     RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM2, ENABLE);        //使能定时器2的时钟

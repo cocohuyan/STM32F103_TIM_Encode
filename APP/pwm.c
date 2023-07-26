@@ -7,12 +7,9 @@ static void TIM1_GPIO_Config(void)
     GPIO_InitTypeDef GPIO_InitStructure;
 
     /* TIM1 clock enable */
-    RCC_APB2PeriphClockCmd(RCC_APB2Periph_TIM1, ENABLE);
+    RCC_APB2PeriphClockCmd(RCC_APB2Periph_TIM1|RCC_APB2Periph_GPIOB, ENABLE);
 
-    /* GPIOA and GPIOB clock enable */
-    RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA | RCC_APB2Periph_GPIOB, ENABLE);
-
-    GPIO_InitStructure.GPIO_Pin =  GPIO_Pin_14 | GPIO_Pin_15;
+    GPIO_InitStructure.GPIO_Pin =  GPIO_Pin_15;
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;
     GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
 
@@ -27,8 +24,8 @@ static void TIM1_Mode_Config(void)
 
     /* PWM信号电平跳变值 */
     //u16 CCR1_Val = 50000;
-    u16 CCR2_Val = 22500;
-    u16 CCR3_Val = 5000;
+    //u16 CCR2_Val = 22500;
+    u16 CCR3_Val = 22000;
     //u16 CCR4_Val = 125;
 
 /* -----------------------------------------------------------------------
@@ -63,8 +60,7 @@ static void TIM1_Mode_Config(void)
 
     TIM_OC1PreloadConfig(TIM1, TIM_OCPreload_Enable);*/
 
-    /* PWM1 Mode configuration: Channel2 */
-
+    /* PWM1 Mode configuration: Channel2
     TIM_OCInitStructure.TIM_OCMode = TIM_OCMode_PWM2;
     TIM_OCInitStructure.TIM_OutputState = TIM_OutputState_Enable;
     TIM_OCInitStructure.TIM_OutputNState = TIM_OutputNState_Enable;
@@ -75,11 +71,8 @@ static void TIM1_Mode_Config(void)
     TIM_OCInitStructure.TIM_OCNIdleState = TIM_OCIdleState_Reset;
 
     TIM_OC2Init(TIM1, &TIM_OCInitStructure);
+    TIM_OC2PreloadConfig(TIM1, TIM_OCPreload_Enable);*/
 
-    TIM_OC2PreloadConfig(TIM1, TIM_OCPreload_Enable);
-
-
-    /* PWM1 Mode configuration: Channel3 */
 
     TIM_OCInitStructure.TIM_OCMode = TIM_OCMode_PWM2;
     TIM_OCInitStructure.TIM_OutputState = TIM_OutputState_Enable;
@@ -91,7 +84,6 @@ static void TIM1_Mode_Config(void)
     TIM_OCInitStructure.TIM_OCNIdleState = TIM_OCIdleState_Reset;
 
     TIM_OC3Init(TIM1, &TIM_OCInitStructure);
-
     TIM_OC3PreloadConfig(TIM1, TIM_OCPreload_Enable);
 
 
@@ -114,7 +106,7 @@ void PWM_SetDuty(uint8_t duty)
     }
 
     compare2 = (100 - duty) * PWM_PERIOD_COUNT/100;
-    TIM_SetCompare2(TIM1, compare2);
+    TIM_SetCompare3(TIM1, compare2);
 }
 
 /* 初始化TIM1 */

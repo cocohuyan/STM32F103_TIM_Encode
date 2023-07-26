@@ -16,7 +16,7 @@
   * CODING INFORMATION CONTAINED HEREIN IN CONNECTION WITH THEIR PRODUCTS.
   *
   * <h2><center>&copy; COPYRIGHT 2009 STMicroelectronics</center></h2>
-  */ 
+  */
 
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f10x_rcc.h"
@@ -25,10 +25,10 @@
   * @{
   */
 
-/** @defgroup RCC 
+/** @defgroup RCC
   * @brief RCC driver modules
   * @{
-  */ 
+  */
 
 /** @defgroup RCC_Private_TypesDefinitions
   * @{
@@ -138,19 +138,19 @@
 
 /**
   * @}
-  */ 
+  */
 
 /** @defgroup RCC_Private_Macros
   * @{
-  */ 
+  */
 
 /**
   * @}
-  */ 
+  */
 
 /** @defgroup RCC_Private_Variables
   * @{
-  */ 
+  */
 
 static __I uint8_t APBAHBPrescTable[16] = {0, 0, 0, 0, 1, 2, 3, 4, 1, 2, 3, 4, 6, 7, 8, 9};
 static __I uint8_t ADCPrescTable[4] = {2, 4, 6, 8};
@@ -182,7 +182,7 @@ void RCC_DeInit(void)
   RCC->CR |= (uint32_t)0x00000001;
   /* Reset SW[1:0], HPRE[3:0], PPRE1[2:0], PPRE2[2:0], ADCPRE[1:0] and MCO[2:0] bits */
   RCC->CFGR &= (uint32_t)0xF8FF0000;
-  
+
   /* Reset HSEON, CSSON and PLLON bits */
   RCC->CR &= (uint32_t)0xFEF6FFFF;
   /* Reset HSEBYP bit */
@@ -195,7 +195,7 @@ void RCC_DeInit(void)
 
 /**
   * @brief  Configures the External High Speed oscillator (HSE).
-  *   HSE can not be stopped if it is used directly or through the 
+  *   HSE can not be stopped if it is used directly or through the
   *   PLL as system clock.
   * @param RCC_HSE: specifies the new state of the HSE.
   *   This parameter can be one of the following values:
@@ -221,12 +221,12 @@ void RCC_HSEConfig(uint32_t RCC_HSE)
       /* Set HSEON bit */
       RCC->CR |= CR_HSEON_Set;
       break;
-      
+
     case RCC_HSE_Bypass:
       /* Set HSEBYP and HSEON bits */
       RCC->CR |= CR_HSEBYP_Set | CR_HSEON_Set;
       break;
-      
+
     default:
       break;
   }
@@ -244,12 +244,12 @@ ErrorStatus RCC_WaitForHSEStartUp(void)
   __IO uint32_t StartUpCounter = 0;
   ErrorStatus status = ERROR;
   FlagStatus HSEStatus = RESET;
-  
+
   /* Wait till HSE is ready and if Time out is reached exit */
   do
   {
     HSEStatus = RCC_GetFlagStatus(RCC_FLAG_HSERDY);
-    StartUpCounter++;  
+    StartUpCounter++;
   } while((HSEStatus == RESET) && (StartUpCounter != HSEStartUp_TimeOut));
   if (RCC_GetFlagStatus(RCC_FLAG_HSERDY) != RESET)
   {
@@ -258,7 +258,7 @@ ErrorStatus RCC_WaitForHSEStartUp(void)
   else
   {
     status = ERROR;
-  }  
+  }
   return (status);
 }
 
@@ -285,7 +285,7 @@ void RCC_AdjustHSICalibrationValue(uint8_t HSICalibrationValue)
 
 /**
   * @brief  Enables or disables the Internal High Speed oscillator (HSI).
-  *   HSI can not be stopped if it is used directly or through the 
+  *   HSI can not be stopped if it is used directly or through the
   *   PLL as system clock.
   * @param NewState: new state of the HSI.
   *   This parameter can be: ENABLE or DISABLE.
@@ -381,7 +381,7 @@ uint8_t RCC_GetSYSCLKSource(void)
 
 /**
   * @brief  Configures the AHB clock (HCLK).
-  * @param RCC_SYSCLK: defines the AHB clock divider. This clock is derived from 
+  * @param RCC_SYSCLK: defines the AHB clock divider. This clock is derived from
   *                    the system clock (SYSCLK).
   *   This parameter can be one of the following values:
   * @arg RCC_SYSCLK_Div1: AHB clock = SYSCLK
@@ -411,7 +411,7 @@ void RCC_HCLKConfig(uint32_t RCC_SYSCLK)
 
 /**
   * @brief  Configures the Low Speed APB clock (PCLK1).
-  * @param RCC_HCLK: defines the APB1 clock divider. This clock is derived from 
+  * @param RCC_HCLK: defines the APB1 clock divider. This clock is derived from
   *                  the AHB clock (HCLK).
   *   This parameter can be one of the following values:
   * @arg RCC_HCLK_Div1: APB1 clock = HCLK
@@ -437,7 +437,7 @@ void RCC_PCLK1Config(uint32_t RCC_HCLK)
 
 /**
   * @brief  Configures the High Speed APB clock (PCLK2).
-  * @param RCC_HCLK: defines the APB2 clock divider. This clock is derived from 
+  * @param RCC_HCLK: defines the APB2 clock divider. This clock is derived from
   *                  the AHB clock (HCLK).
   *   This parameter can be one of the following values:
   * @arg RCC_HCLK_Div1: APB2 clock = HCLK
@@ -493,10 +493,10 @@ void RCC_ITConfig(uint8_t RCC_IT, FunctionalState NewState)
 
 /**
   * @brief  Configures the USB clock (USBCLK).
-  * @param RCC_USBCLKSource: specifies the USB clock source. This clock is 
+  * @param RCC_USBCLKSource: specifies the USB clock source. This clock is
   *                          derived from the PLL output.
   *   This parameter can be one of the following values:
-  * @arg RCC_USBCLKSource_PLLCLK_1Div5: PLL clock divided by 1,5 selected as USB 
+  * @arg RCC_USBCLKSource_PLLCLK_1Div5: PLL clock divided by 1,5 selected as USB
   *                                     clock source
   * @arg RCC_USBCLKSource_PLLCLK_Div1: PLL clock selected as USB clock source
   * @retval : None
@@ -510,7 +510,7 @@ void RCC_USBCLKConfig(uint32_t RCC_USBCLKSource)
 
 /**
   * @brief  Configures the ADC clock (ADCCLK).
-  * @param RCC_PCLK2: defines the ADC clock divider. This clock is derived from 
+  * @param RCC_PCLK2: defines the ADC clock divider. This clock is derived from
   *                   the APB2 clock (PCLK2).
   *   This parameter can be one of the following values:
   * @arg RCC_PCLK2_Div2: ADC clock = PCLK2/2
@@ -559,14 +559,14 @@ void RCC_LSEConfig(uint8_t RCC_LSE)
       /* Set LSEON bit */
       *(__IO uint8_t *) BDCR_ADDRESS = RCC_LSE_ON;
       break;
-      
+
     case RCC_LSE_Bypass:
       /* Set LSEBYP and LSEON bits */
       *(__IO uint8_t *) BDCR_ADDRESS = RCC_LSE_Bypass | RCC_LSE_ON;
-      break;            
-      
+      break;
+
     default:
-      break;      
+      break;
   }
 }
 
@@ -586,7 +586,7 @@ void RCC_LSICmd(FunctionalState NewState)
 
 /**
   * @brief  Configures the RTC clock (RTCCLK).
-  *   Once the RTC clock is selected it can’t be changed unless the
+  *   Once the RTC clock is selected it canéŽ¶ï¿½ be changed unless the
   *   Backup domain is reset.
   * @param RCC_RTCCLKSource: specifies the RTC clock source.
   *   This parameter can be one of the following values:
@@ -759,7 +759,7 @@ void RCC_APB2PeriphClockCmd(uint32_t RCC_APB2Periph, FunctionalState NewState)
   * @arg RCC_APB1Periph_TIM2, RCC_APB1Periph_TIM3, RCC_APB1Periph_TIM4,
   *   RCC_APB1Periph_TIM5, RCC_APB1Periph_TIM6, RCC_APB1Periph_TIM7,
   *   RCC_APB1Periph_WWDG, RCC_APB1Periph_SPI2, RCC_APB1Periph_SPI3,
-  *   RCC_APB1Periph_USART2, RCC_APB1Periph_USART3, RCC_APB1Periph_USART4, 
+  *   RCC_APB1Periph_USART2, RCC_APB1Periph_USART3, RCC_APB1Periph_USART4,
   *   RCC_APB1Periph_USART5, RCC_APB1Periph_I2C1, RCC_APB1Periph_I2C2,
   *   RCC_APB1Periph_USB, RCC_APB1Periph_CAN1, RCC_APB1Periph_BKP,
   *   RCC_APB1Periph_PWR, RCC_APB1Periph_DAC, RCC_APB1Periph_ALL
@@ -818,7 +818,7 @@ void RCC_APB2PeriphResetCmd(uint32_t RCC_APB2Periph, FunctionalState NewState)
   * @arg RCC_APB1Periph_TIM2, RCC_APB1Periph_TIM3, RCC_APB1Periph_TIM4,
   *   RCC_APB1Periph_TIM5, RCC_APB1Periph_TIM6, RCC_APB1Periph_TIM7,
   *   RCC_APB1Periph_WWDG, RCC_APB1Periph_SPI2, RCC_APB1Periph_SPI3,
-  *   RCC_APB1Periph_USART2, RCC_APB1Periph_USART3, RCC_APB1Periph_USART4, 
+  *   RCC_APB1Periph_USART2, RCC_APB1Periph_USART3, RCC_APB1Periph_USART4,
   *   RCC_APB1Periph_USART5, RCC_APB1Periph_I2C1, RCC_APB1Periph_I2C2,
   *   RCC_APB1Periph_USB, RCC_APB1Periph_CAN1, RCC_APB1Periph_BKP,
   *   RCC_APB1Periph_PWR, RCC_APB1Periph_DAC, RCC_APB1Periph_ALL
@@ -983,7 +983,7 @@ ITStatus RCC_GetITStatus(uint8_t RCC_IT)
 }
 
 /**
-  * @brief  Clears the RCC’s interrupt pending bits.
+  * @brief  Clears the RCCéŽ¶ï¿½ interrupt pending bits.
   * @param RCC_IT: specifies the interrupt pending bit to clear.
   *   This parameter can be any combination of the following values:
   * @arg RCC_IT_LSIRDY: LSI ready interrupt
