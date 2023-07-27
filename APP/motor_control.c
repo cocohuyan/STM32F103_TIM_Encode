@@ -1,4 +1,5 @@
 #include "motor_control.h"
+#include <stdio.h>
 #include "stm32f10x_gpio.h"
 #include "calibration.h"
 #include "encode.h"
@@ -86,7 +87,7 @@ static void MotorPidControlPosition(void)
     //误差确保在 -18000 ~ 18000 之间
     if (g_control.pid.angleError > PID_ANGLE_ERROR_MAX) {
         g_control.pid.angleError -= PID_ANGLE_MAX;
-    } else if (g_control.pid.angleError < PID_ANGLE_ERROR_MAX) {
+    } else if (g_control.pid.angleError < PID_ANGLE_ERROR_MIN) {
         g_control.pid.angleError += PID_ANGLE_MAX;
     }
 
@@ -100,7 +101,7 @@ static void MotorPidControlPosition(void)
 
     g_control.pid.outputKd = g_control.pid.kd * (g_control.pid.angleError - g_control.pid.angleErrorLast);
 
-    g_control.pid.output = g_control.pid.outputKp + g_control.pid.outputKi + g_control.pid.outputKd;
+    g_control.pid.output = (g_control.pid.outputKp + g_control.pid.outputKi + g_control.pid.outputKd)/100;
 
     // 根据输出的速度 转换为占空比并控制电机
     MotorCalcuDutyToOutput();
@@ -137,9 +138,9 @@ void MotorSetControlStatus(State_t state)
 void MotorControlInit(void)
 {
     g_control.state = STATE_NO_CALIB;
-    g_control.pid.kp = 10;
-    g_control.pid.ki = 0.01;
-    g_control.pid.kd = -0.1;
+    g_control.pid.kp = 1000;
+    g_control.pid.ki = 1;
+    g_control.pid.kd = -1;
 }
 
 void MotorSetControlAngle(uint16_t angle)
@@ -147,4 +148,12 @@ void MotorSetControlAngle(uint16_t angle)
     g_control._Angle = angle;
 
     MotorSetControlStatus(STATE_RUNNING);
+}
+
+void MotroPrintDebugInfo(void)
+{
+    printf("pid_t para: kp:%d, ki:%d, kd:%d\r\n", g_control.pid.kp, g_control.pid.ki, g_control.pid.kd);
+    printf("pid_t out : output:%d, outputKp:%d, outputKi:%d,  outputKd:%d\r\n", g_control.pid.output, \
+           g_control.pid.outputKp, g_control.pid.outputKi, g_control.pid.outputKd);
+    printf("pid_t err : angleError:%d, _Angle:%d, realAngle:%d\r\n", g_control.pid.angleError, g_control._Angle, g_control.realAngle);
 }

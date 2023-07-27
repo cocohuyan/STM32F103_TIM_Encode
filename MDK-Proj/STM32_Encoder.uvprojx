@@ -593,6 +593,11 @@
               <FileType>1</FileType>
               <FilePath>..\APP\motor_control.c</FilePath>
             </File>
+            <File>
+              <FileName>encode.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\APP\encode.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>

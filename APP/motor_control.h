@@ -18,4 +18,6 @@ void MotorSetControlStatus(State_t state);
 void MotorTickProcess(void);
 void MotorControlInit(void);
 void MotorSetControlAngle(uint16_t angle);
+void MotroPrintDebugInfo(void);
+
 #endif /* _MOTOR_CONTROL_H_ */

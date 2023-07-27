@@ -174,8 +174,6 @@ int main(void)
     uint8_t info = 0;
     uint32_t freq;
     uint32_t duty;
-    uint32_t j;
-    char txMsg[64] = {0};
     /* Setup STM32 system (clock, PLL and Flash configuration) */
     SystemInit();
     RCC_Configuration();
@@ -197,12 +195,9 @@ int main(void)
             lasttick = tick;
             freq = IC_GetFreq();
             duty = IC_GetDuty();
-            SEGGER_RTT_printf(0,"-freq: %d!\r\n", freq);
-            SEGGER_RTT_printf(0,"-duty: %d!\r\n", duty);
-            j = snprintf(txMsg,64, "-duty: %d!\r\n", duty);
-            USART1_SendBuf((const uint8_t*)txMsg, j);
-            j = snprintf(txMsg,64, "-freq: %d!\r\n", freq);
-            USART1_SendBuf((const uint8_t*)txMsg, j);
+            printf("-duty: %d!\r\n", duty);
+            printf("-freq: %d!\r\n", freq);
+            MotroPrintDebugInfo();
         }
 
         if (DeSEQueue(&g_Queue[0], &info)) {   //从队列中出队

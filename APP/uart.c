@@ -6,7 +6,7 @@
 #include <stdlib.h>
 
 #define SCOM_HEADER_LENGTH                  6
-#define SCOM1_HEADER_LENGTH                 5 //
+#define SCOM1_HEADER_LENGTH                 6 //
 
 // #define SCOM0_MIN_LENGTH    8
 #define SCOM1_MIN_LENGTH    8
@@ -143,7 +143,6 @@ void USART_Configuration(void)
     USART_Cmd(USART1, ENABLE);
 }
 
-
 /***************************************
 功能:串口1输出一个字节
 输入:c:串口输出的字符
@@ -154,6 +153,13 @@ void USART1_Putc(const uint8_t c)
     USART_SendData(USART1, c);
     /* Loop until the end of transmission */
     while(RESET == USART_GetFlagStatus(USART1, USART_FLAG_TXE));
+}
+
+#include <stdio.h>
+int fputc(int ch, FILE* f)
+{
+    USART1_Putc(ch);
+    return ch;
 }
 
 void USART1_SendBuf(const uint8_t* u8buf, const uint16_t uint16_tlen)
@@ -302,7 +308,7 @@ static void ANGSTCmd_Progress(const uint8_t* Rxbuf, uint16_t len)
         }
     }
 
-    USART1_SendString("Receive GDSZ cmd!\r\n");
+    printf("Recieve ANGST cmd!\r\n");
 }
 /*************************************************
 功能：串口接收到完整帧后进行数据处理
