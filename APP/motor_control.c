@@ -20,17 +20,17 @@
 */
 typedef struct {
     bool kpValid, kiValid, kdValid;
-    int32_t kp, ki, kd;
-    int32_t angleError, angleErrorLast;
-    int32_t outputKp, outputKi, outputKd;
+    double kp, ki, kd;
+    double angleError, angleErrorLast;
+    double outputKp, outputKi, outputKd;
     int32_t integralRound;
     int32_t integralRemainder;
-    int32_t output;                               // pid计算输出的转速
+    double output;                               // pid计算输出的转速
 } PID_t;
 
 typedef struct  {
-    uint16_t realAngle;
-    uint16_t _Angle;
+    uint16_t realAngle;      // 测量当前的实际角度 范围 0-36000
+    uint16_t _Angle;         // 设置的目标角度 范围 0-36000
     State_t state;
     PID_t pid;
 } Controller_t;
@@ -40,18 +40,25 @@ Controller_t g_control;
 static void MotorCalcuDutyToOutput(void)
 {
     static bool direction;
-    uint32_t velocity;
+    double velocity;
     uint16_t duty;
 
-    if (g_control.pid.output > 10) {
+    if (g_control.pid.output > 0.9) {
         velocity = g_control.pid.output;
-        direction = TRUE;
-    } else if (g_control.pid.output < -10) {
-        velocity = -g_control.pid.output;
         direction = FALSE;
-    } else {
-        g_control.state = STATE_STOP;
+    } else if (g_control.pid.output < -0.9) {
+        velocity = -g_control.pid.output;
+        direction = TRUE;
+    } else/* if ((g_control.pid.outputKp < 0.3) && (g_control.pid.outputKp > -0.3)) */{
         PWM_SetDuty(100);
+        g_control.state = STATE_STOP;
+        g_control.pid.outputKp = 0;
+        g_control.pid.outputKi = 0;
+        g_control.pid.outputKd = 0;
+        g_control.pid.angleError = 0;
+        g_control.pid.angleErrorLast = 0;
+        g_control.pid.output = 0;
+
         return;
     }
 
@@ -101,7 +108,7 @@ static void MotorPidControlPosition(void)
 
     g_control.pid.outputKd = g_control.pid.kd * (g_control.pid.angleError - g_control.pid.angleErrorLast);
 
-    g_control.pid.output = (g_control.pid.outputKp + g_control.pid.outputKi + g_control.pid.outputKd)/100;
+    g_control.pid.output = (g_control.pid.outputKp + g_control.pid.outputKi/5000 + g_control.pid.outputKd)/100;
 
     // 根据输出的速度 转换为占空比并控制电机
     MotorCalcuDutyToOutput();
@@ -135,16 +142,30 @@ void MotorSetControlStatus(State_t state)
     g_control.state = state;
 }
 
+/**
+ * 设置Pid的 kp ki kd参数; 调整控制效果
+*/
+void MotorControlSetPidCoeff(const double* coeff)
+{
+    g_control.pid.kp = coeff[0];
+    g_control.pid.ki = coeff[1];
+    g_control.pid.kd = coeff[2];
+}
+
 void MotorControlInit(void)
 {
     g_control.state = STATE_NO_CALIB;
-    g_control.pid.kp = 1000;
-    g_control.pid.ki = 1;
-    g_control.pid.kd = -1;
+    g_control.pid.kp = 2.5;
+    g_control.pid.ki = 0.00001;
+    g_control.pid.kd = 0;
 }
 
 void MotorSetControlAngle(uint16_t angle)
 {
+    if (angle >= 36000) {
+        printf("MotorSetControlAngle para err! angle:%d", angle);
+        return;
+    }
     g_control._Angle = angle;
 
     MotorSetControlStatus(STATE_RUNNING);
@@ -152,8 +173,45 @@ void MotorSetControlAngle(uint16_t angle)
 
 void MotroPrintDebugInfo(void)
 {
-    printf("pid_t para: kp:%d, ki:%d, kd:%d\r\n", g_control.pid.kp, g_control.pid.ki, g_control.pid.kd);
-    printf("pid_t out : output:%d, outputKp:%d, outputKi:%d,  outputKd:%d\r\n", g_control.pid.output, \
+    //printf("pid_t para: kp:%d, ki:%d, kd:%d\r\n", g_control.pid.kp, g_control.pid.ki, g_control.pid.kd);
+    printf("pid_t out : output:%f, outputKp:%f, outputKi:%f,  outputKd:%f\r\n", g_control.pid.output, \
            g_control.pid.outputKp, g_control.pid.outputKi, g_control.pid.outputKd);
-    printf("pid_t err : angleError:%d, _Angle:%d, realAngle:%d\r\n", g_control.pid.angleError, g_control._Angle, g_control.realAngle);
+    printf("pid_t err : angleError:%f, _Angle:%d, realAngle:%d\r\n", g_control.pid.angleError, g_control._Angle, g_control.realAngle);
+}
+
+/**
+ * 打印PID参数
+*/
+void MotorPrintAngle(void)
+{
+    printf("$ANGDA,%d,%d*5A\r\n", g_control._Angle, g_control.realAngle);
+}
+
+/**
+ * 打印当前所处角度
+*/
+void MotorPrintPidCoeff(void)
+{
+    printf("$PIDDA,%f,%f,%f*5A\r\n", g_control.pid.kp, g_control.pid.ki, g_control.pid.kd);
+}
+
+void MotorUpdateRealAngle(uint16_t angle)
+{
+    if (angle >= 36000) {
+        printf("MotorUpdateRealAngle para err! angle:%d", angle);
+        return;
+    }
+    g_control.realAngle = angle;
+}
+
+
+void MotroControlAngleCheck(void)
+{
+    uint16_t angle;
+    angle = Encode_UpdateAngle();
+    if (angle - g_control._Angle > 200 || angle - g_control._Angle < -200) {
+        MotorSetControlStatus(STATE_RUNNING);
+    }
+
+    MotorUpdateRealAngle(angle);
 }

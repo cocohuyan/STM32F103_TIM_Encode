@@ -24,7 +24,7 @@ void SysTick_Handler(void)     //一毫秒系统中断
     TimingDelay_Decrement();
 
     g_Systick++;
-    if (g_Systick%50 == 0) {
+    if (g_Systick%10 == 0) {
         MotorTickProcess();
     }
 

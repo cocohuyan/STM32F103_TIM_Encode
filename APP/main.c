@@ -172,6 +172,7 @@ uint32_t lasttick = 0;
 int main(void)
 {
     uint8_t info = 0;
+    uint16_t angle;
     uint32_t freq;
     uint32_t duty;
     /* Setup STM32 system (clock, PLL and Flash configuration) */
@@ -191,12 +192,18 @@ int main(void)
     /* Infinite loop */
     while (1) {
         uint32_t tick = GetSystick();
-        if (tick%1000 == 0 && tick !=lasttick) {
+        angle = Encode_UpdateAngle();
+        if (STATE_STOP == MotorGetControlStatus()) {
+            //MotroControlAngleCheck();
+
+        }
+        if (tick%300 == 0 && tick !=lasttick) {
             lasttick = tick;
             freq = IC_GetFreq();
             duty = IC_GetDuty();
-            printf("-duty: %d!\r\n", duty);
-            printf("-freq: %d!\r\n", freq);
+            //printf("-duty: %d!\r\n", duty);
+            //printf("-freq: %d!\r\n", freq);
+
             MotroPrintDebugInfo();
         }
 
@@ -213,6 +220,7 @@ void ENCODE_ZPaseProcess(void)
         MotorSetControlStatus(STATE_STOP);
     }
     SEGGER_RTT_printf(0,"---------------Z pulse--------------!\r\n");
+    printf("---------------Z pulse--------------!\r\n");
 }
 
 void EXTI2_IRQHandler(void)
@@ -231,7 +239,7 @@ void EXTI0_IRQHandler(void)
     if (EXTI_GetITStatus(EXTI_Line0) == SET)
     {
         //这里写中断处理的一些内容：
-        ENCODE_ZPaseProcess();
+        // ENCODE_ZPaseProcess();
         EXTI_ClearITPendingBit(EXTI_Line0);
     }
 }

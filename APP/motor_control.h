@@ -19,5 +19,10 @@ void MotorTickProcess(void);
 void MotorControlInit(void);
 void MotorSetControlAngle(uint16_t angle);
 void MotroPrintDebugInfo(void);
+void MotorUpdateRealAngle(uint16_t angle);
+void MotorPrintPidCoeff(void);
+void MotorPrintAngle(void);
+void MotorControlSetPidCoeff(const double* coeff);
+void MotroControlAngleCheck(void);
 
 #endif /* _MOTOR_CONTROL_H_ */

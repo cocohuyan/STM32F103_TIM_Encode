@@ -44,6 +44,8 @@ enum UART_FRAME_ID_TYPE/*UART帧ID 枚举*/
     //UART0_Rx ,
     ANGST_ID,
     ANGRD_ID,
+    PIDST_ID,
+    PIDRD_ID,
 };
 
 /* 数据帧类型 */
@@ -297,7 +299,7 @@ static void ANGSTCmd_Progress(const uint8_t* Rxbuf, uint16_t len)
 
         switch(i)
         {
-            case 0: // 数据频率, 限定了几个指定的频率
+            case 0: // 设置目标角度 单位:度/100 tempdata 范围
                 MotorSetControlAngle(tempdata);
                 break;
             case 1: // 初始对准时间，限定了几个指定的
@@ -310,6 +312,88 @@ static void ANGSTCmd_Progress(const uint8_t* Rxbuf, uint16_t len)
 
     printf("Recieve ANGST cmd!\r\n");
 }
+
+/**
+ * 读取角度
+*/
+static void ANGRDCmd_Progress(const uint8_t* Rxbuf, uint16_t len)
+{
+    MotorPrintAngle();
+}
+
+static void PIDSTCmd_Progress(const uint8_t* Rxbuf, uint16_t len)
+{
+    uint8_t commabuf[COMMA_LEN_MAX] = {0};
+    float tempdata = 0;
+    char sbuf[20] = {0};
+    uint8_t commaNumber = 0;  //
+    uint16_t i = 0, buflen = 0;
+    double coeff[3] = {0};
+
+    commaNumber = GetCommaPosAndNumber(Rxbuf,len,commabuf);
+    if(commaNumber > 2)
+    {
+        return;
+    }
+
+    for(i = 0; i < commaNumber; i++)        // 逗号都遍历一遍,
+    {
+        if(i != (commaNumber - 1))              // 不是最后一个逗号
+        {
+            if(commabuf[i]+1 == commabuf[i+1])  // 两个逗号挨着，说明数据为空，赋值为0
+            {
+                tempdata = 0.0;
+                buflen = 0;
+            }
+            else
+            {
+                memset(sbuf, 0, 20);
+                buflen = commabuf[i+1] - commabuf[i] - 1;
+                memcpy(sbuf, &Rxbuf[commabuf[i]+1], buflen);
+                tempdata = atof(sbuf);
+            }
+        }
+        else //最后一个逗号
+        {
+            if(commabuf[i]+1 == (len-5)) // 逗号之后 为'*'
+            {
+                tempdata = 0.0;
+                buflen = 0;
+            }
+            else
+            {
+                memset(sbuf, 0, 20);
+                buflen = len-5 - commabuf[i] - 1;
+                memcpy(sbuf, &Rxbuf[commabuf[i]+1], buflen);
+                tempdata = atof(sbuf);
+            }
+
+        }
+
+        switch(i)
+        {
+            case 0: // 设置目标角度 单位:度/100 tempdata 范围
+                coeff[0] = (double)tempdata;
+                break;
+            case 1: // 初始对准时间，限定了几个指定的
+                coeff[1] = (double)tempdata;
+                break;
+            case 2: // 初始对准时间，限定了几个指定的
+                coeff[2] = (double)tempdata;
+                break;
+            default:
+                break;
+        }
+    }
+
+    MotorControlSetPidCoeff((const double*) coeff);
+}
+
+static void PIDRDCmd_Progress(const uint8_t* Rxbuf, uint16_t len)
+{
+    MotorPrintPidCoeff();
+}
+
 /*************************************************
 功能：串口接收到完整帧后进行数据处理
 输入：Rxbuf: 数据帧
@@ -330,7 +414,15 @@ static void SCOM1_Process_cmd(uint8_t* Rxbuf, uint16_t len,uint8_t cmdtype)
         case ANGST_ID:
             ANGSTCmd_Progress(Rxbuf, len);
             break;
-
+        case ANGRD_ID:
+            ANGRDCmd_Progress(Rxbuf, len);
+            break;
+        case PIDST_ID:
+            PIDSTCmd_Progress(Rxbuf, len);
+            break;
+        case PIDRD_ID:
+            PIDRDCmd_Progress(Rxbuf, len);
+            break;
         default:
             USART1_SendBuf((unsigned char*)Rxbuf, len);
             break;
@@ -403,11 +495,27 @@ void USART1_Receive(uint8_t chbyte)
         s_framdata.frameType = BD21_TYPE;
         memcpy(g_u8COM1_RX_BUF,s_framdata.u8Header,SCOM1_HEADER_LENGTH);
     }
-    //ZJZX
+    //ANGRD
     else if(0 == strncmp(s_framdata.u8Header,"$ANGRD", SCOM1_HEADER_LENGTH))
     {
         s_framdata.u8commSYN = FSYN_ON;
         s_framdata.u8cmdtype = ANGRD_ID;
+        s_framdata.iCommCount = SCOM1_HEADER_LENGTH;
+        s_framdata.frameType = BD21_TYPE;
+        memcpy(g_u8COM1_RX_BUF, s_framdata.u8Header, SCOM1_HEADER_LENGTH);
+    }
+    else if(0 == strncmp(s_framdata.u8Header,"$PIDST", SCOM1_HEADER_LENGTH))
+    {
+        s_framdata.u8commSYN = FSYN_ON;
+        s_framdata.u8cmdtype = PIDST_ID;
+        s_framdata.iCommCount = SCOM1_HEADER_LENGTH;
+        s_framdata.frameType = BD21_TYPE;
+        memcpy(g_u8COM1_RX_BUF, s_framdata.u8Header, SCOM1_HEADER_LENGTH);
+    }
+    else if(0 == strncmp(s_framdata.u8Header,"$PIDRD", SCOM1_HEADER_LENGTH))
+    {
+        s_framdata.u8commSYN = FSYN_ON;
+        s_framdata.u8cmdtype = PIDRD_ID;
         s_framdata.iCommCount = SCOM1_HEADER_LENGTH;
         s_framdata.frameType = BD21_TYPE;
         memcpy(g_u8COM1_RX_BUF, s_framdata.u8Header, SCOM1_HEADER_LENGTH);

@@ -6,7 +6,7 @@
 
 void TIM2_Encoder_Init(u16 arr,u16 psc)
 {
-#if 0
+#if 1
     GPIO_InitTypeDef GPIO_InitStructure;
     TIM_TimeBaseInitTypeDef  TIM_TimeBaseStructure;
     TIM_ICInitTypeDef  TIM_ICInitStructure;
