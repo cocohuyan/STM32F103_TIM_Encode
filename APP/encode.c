@@ -3,6 +3,7 @@
 #include "stm32f10x_tim.h"
 #include "stm32f10x_gpio.h"
 #include "stm32f10x_rcc.h"
+#include "motor_control.h"
 
 void TIM2_Encoder_Init(u16 arr,u16 psc)
 {
@@ -105,7 +106,13 @@ uint16_t Encode_UpdateAngle(void)
     int angle;
 
     counter =  TIM_GetCounter(TIM2);
+
+    /* 检查counter值 如果即将溢出需要重新设置 To do */
+
+    /* angle范围 -36000 ~ 36000 */
     angle = ((int)(counter - TIM_ENCODE_COUNT_INIT)%ENCODE_CNT_PERROUND) * ENCODE_COUNT2ANGLE;
+
+    MotorAngleCalibrateBoardOffset(&angle);
 
     if ((angle < 0) && (angle >= -36000)) {
         angle += 36000;

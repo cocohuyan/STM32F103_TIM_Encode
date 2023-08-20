@@ -33,7 +33,7 @@
 #include "calibration.h"
 #include "encode.h"
 #include "motor_control.h"
-
+#include "stmflash.h"
 /** @addtogroup Template_Project
   * @{
   */
@@ -187,22 +187,22 @@ int main(void)
     TIM1_PWM_Init();
     TIM2_Encoder_Init(65535,0); // 定时器2编码器模式
     TIM3_Int_Init(4999,719);      // 0.05s定时器溢出中断
-
+    BoardConfigParaRead();
     MotorControlInit();
     /* Infinite loop */
     while (1) {
         uint32_t tick = GetSystick();
         angle = Encode_UpdateAngle();
         if (STATE_STOP == MotorGetControlStatus()) {
-            //MotroControlAngleCheck();
+            //MotorControlAngleCheck();
 
         }
         if (tick%300 == 0 && tick !=lasttick) {
             lasttick = tick;
             freq = IC_GetFreq();
             duty = IC_GetDuty();
-            //printf("-duty: %d!\r\n", duty);
-            //printf("-freq: %d!\r\n", freq);
+            printf("-duty: %d!\r\n", duty);
+            printf("-freq: %d!\r\n", freq);
 
             MotroPrintDebugInfo();
         }

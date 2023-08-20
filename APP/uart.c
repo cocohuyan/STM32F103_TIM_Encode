@@ -46,6 +46,7 @@ enum UART_FRAME_ID_TYPE/*UART帧ID 枚举*/
     ANGRD_ID,
     PIDST_ID,
     PIDRD_ID,
+    ANCAL_ID,  /* 这只角度偏差指令 */
 };
 
 /* 数据帧类型 */
@@ -394,6 +395,71 @@ static void PIDRDCmd_Progress(const uint8_t* Rxbuf, uint16_t len)
     MotorPrintPidCoeff();
 }
 
+/**
+ * @brief 解析ANCAL指令并保存到flash中, ANCAL指令格式 $ANCAL,xx*AA
+ *
+*/
+static void ANCALCmd_Progress(const uint8_t* Rxbuf, uint16_t len)
+{
+    uint8_t commabuf[COMMA_LEN_MAX] = {0};
+    float tempdata = 0;
+    char sbuf[20] = {0};
+    uint8_t commaNumber = 0;  //
+    uint16_t i = 0, buflen = 0;
+    int16_t offset;
+
+    commaNumber = GetCommaPosAndNumber(Rxbuf,len,commabuf);
+    if(commaNumber > 2)
+    {
+        return;
+    }
+
+    for(i = 0; i < commaNumber; i++)        // 逗号都遍历一遍,
+    {
+        if(i != (commaNumber - 1))              // 不是最后一个逗号
+        {
+            if(commabuf[i]+1 == commabuf[i+1])  // 两个逗号挨着，说明数据为空，赋值为0
+            {
+                tempdata = 0.0;
+                buflen = 0;
+            }
+            else
+            {
+                memset(sbuf, 0, 20);
+                buflen = commabuf[i+1] - commabuf[i] - 1;
+                memcpy(sbuf, &Rxbuf[commabuf[i]+1], buflen);
+                tempdata = atof(sbuf);
+            }
+        }
+        else //最后一个逗号
+        {
+            if(commabuf[i]+1 == (len-5)) // 逗号之后 为'*'
+            {
+                tempdata = 0.0;
+                buflen = 0;
+            }
+            else
+            {
+                memset(sbuf, 0, 20);
+                buflen = len-5 - commabuf[i] - 1;
+                memcpy(sbuf, &Rxbuf[commabuf[i]+1], buflen);
+                tempdata = atof(sbuf);
+            }
+
+        }
+
+        switch(i)
+        {
+            case 0: // 设置目标角度 单位:度/100 tempdata 范围
+                offset = (int16_t)tempdata;
+                MotorControlSetAngleOffset(offset, SET_UPDAE_FLASH);
+                break;
+            default:
+                break;
+        }
+    }
+}
+
 /*************************************************
 功能：串口接收到完整帧后进行数据处理
 输入：Rxbuf: 数据帧
@@ -422,6 +488,9 @@ static void SCOM1_Process_cmd(uint8_t* Rxbuf, uint16_t len,uint8_t cmdtype)
             break;
         case PIDRD_ID:
             PIDRDCmd_Progress(Rxbuf, len);
+            break;
+        case ANCAL_ID:
+            ANCALCmd_Progress(Rxbuf, len);
             break;
         default:
             USART1_SendBuf((unsigned char*)Rxbuf, len);
@@ -516,6 +585,14 @@ void USART1_Receive(uint8_t chbyte)
     {
         s_framdata.u8commSYN = FSYN_ON;
         s_framdata.u8cmdtype = PIDRD_ID;
+        s_framdata.iCommCount = SCOM1_HEADER_LENGTH;
+        s_framdata.frameType = BD21_TYPE;
+        memcpy(g_u8COM1_RX_BUF, s_framdata.u8Header, SCOM1_HEADER_LENGTH);
+    }
+    else if(0 == strncmp(s_framdata.u8Header,"$ANCAL", SCOM1_HEADER_LENGTH))
+    {
+        s_framdata.u8commSYN = FSYN_ON;
+        s_framdata.u8cmdtype = ANCAL_ID;
         s_framdata.iCommCount = SCOM1_HEADER_LENGTH;
         s_framdata.frameType = BD21_TYPE;
         memcpy(g_u8COM1_RX_BUF, s_framdata.u8Header, SCOM1_HEADER_LENGTH);

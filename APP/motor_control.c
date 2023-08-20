@@ -4,6 +4,7 @@
 #include "calibration.h"
 #include "encode.h"
 #include "pwm.h"
+#include "stmflash.h"
 
 #define PWM_DUTY_MAX         84
 #define PWM_DUTY_MIN         55
@@ -15,25 +16,6 @@
 
 #define MOTOR_VELOCITY_MAX   1000
 #define MOTOR_VELOCITY_MIN   208
-/**
- * PID 输出output为占空比
-*/
-typedef struct {
-    bool kpValid, kiValid, kdValid;
-    double kp, ki, kd;
-    double angleError, angleErrorLast;
-    double outputKp, outputKi, outputKd;
-    int32_t integralRound;
-    int32_t integralRemainder;
-    double output;                               // pid计算输出的转速
-} PID_t;
-
-typedef struct  {
-    uint16_t realAngle;      // 测量当前的实际角度 范围 0-36000
-    uint16_t _Angle;         // 设置的目标角度 范围 0-36000
-    State_t state;
-    PID_t pid;
-} Controller_t;
 
 Controller_t g_control;
 
@@ -152,6 +134,29 @@ void MotorControlSetPidCoeff(const double* coeff)
     g_control.pid.kd = coeff[2];
 }
 
+/**
+ * 设置板子角度偏移
+*/
+void MotorControlSetAngleOffset(int16_t offset, SetParaType_t type)
+{
+    if (offset > 18000 || offset < -18000) {
+        printf("MotorControlSetAngleOffset para err %d!", offset);
+        return;
+    }
+    
+    g_control.deltaAngle = offset;
+    printf("MotorControlSetAngleOffset para %d!", offset);
+    
+    if (type == SET_UPDAE_FLASH) {
+        BoardConfigParaSave();
+    }
+}
+
+Controller_t* MotorGetControlPara(void)
+{
+    return &g_control;
+}
+
 void MotorControlInit(void)
 {
     g_control.state = STATE_NO_CALIB;
@@ -205,7 +210,7 @@ void MotorUpdateRealAngle(uint16_t angle)
 }
 
 
-void MotroControlAngleCheck(void)
+void MotorControlAngleCheck(void)
 {
     uint16_t angle;
     angle = Encode_UpdateAngle();
@@ -214,4 +219,25 @@ void MotroControlAngleCheck(void)
     }
 
     MotorUpdateRealAngle(angle);
+}
+
+/**
+ * @brief 编码器计算的角度根据设置的 角度偏差deltaAngle 进行校准，默认偏差为0
+*/
+void MotorAngleCalibrateBoardOffset(int* angle)
+{
+    int tempAngle = *angle;
+    if (tempAngle > 36000 || tempAngle < -36000) {
+        printf("MotorAngleCalibrateBoardOffset input angle err: %d", tempAngle);
+        return;
+    }
+
+    if (g_control.deltaAngle > 18000 || g_control.deltaAngle < -18000) {
+        printf("MotorAngleCalibrateBoardOffset deltaangle err: %d", g_control.deltaAngle);
+        g_control.deltaAngle = 0;
+        return;
+    }
+
+    tempAngle += g_control.deltaAngle;
+    *angle = tempAngle;
 }
