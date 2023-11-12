@@ -532,8 +532,8 @@ void USART1_Receive(uint8_t chbyte)
                     u8checksum = (g_u8COM1_RX_BUF[i] ^ u8checksum) & 0xFF;
                 }
                 //校验和判断
-                if( ( HEXTOCHAR((u8checksum >> 4)&0x0F) == g_u8COM1_RX_BUF[s_framdata.iCommCount-4])  \
-                    &&( HEXTOCHAR(u8checksum & 0x0F) == g_u8COM1_RX_BUF[s_framdata.iCommCount-3]))
+                if( /*( HEXTOCHAR((u8checksum >> 4)&0x0F) == g_u8COM1_RX_BUF[s_framdata.iCommCount-4])  \
+                    &&( HEXTOCHAR(u8checksum & 0x0F) == g_u8COM1_RX_BUF[s_framdata.iCommCount-3])*/ 1)
                 {
                     //校验和通过
                     SCOM1_Process_cmd(g_u8COM1_RX_BUF, s_framdata.iCommCount, s_framdata.u8cmdtype);

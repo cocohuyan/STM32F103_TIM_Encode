@@ -33,6 +33,7 @@ static void MotorCalcuDutyToOutput(void)
         direction = TRUE;
     } else/* if ((g_control.pid.outputKp < 0.3) && (g_control.pid.outputKp > -0.3)) */{
         PWM_SetDuty(100);
+        printf("switch to stop STATE:_Angle:%d, realAngle:%d\r\n", g_control._Angle, g_control.realAngle);
         g_control.state = STATE_STOP;
         g_control.pid.outputKp = 0;
         g_control.pid.outputKi = 0;
@@ -140,13 +141,13 @@ void MotorControlSetPidCoeff(const double* coeff)
 void MotorControlSetAngleOffset(int16_t offset, SetParaType_t type)
 {
     if (offset > 18000 || offset < -18000) {
-        printf("MotorControlSetAngleOffset para err %d!", offset);
+        printf("MotorControlSetAngleOffset para err %d!\r\n", offset);
         return;
     }
-    
+
     g_control.deltaAngle = offset;
-    printf("MotorControlSetAngleOffset para %d!", offset);
-    
+    printf("MotorControlSetAngleOffset para %d!\r\n", offset);
+
     if (type == SET_UPDAE_FLASH) {
         BoardConfigParaSave();
     }
@@ -179,13 +180,13 @@ void MotorSetControlAngle(uint16_t angle)
 void MotroPrintDebugInfo(void)
 {
     //printf("pid_t para: kp:%d, ki:%d, kd:%d\r\n", g_control.pid.kp, g_control.pid.ki, g_control.pid.kd);
-    printf("pid_t out : output:%f, outputKp:%f, outputKi:%f,  outputKd:%f\r\n", g_control.pid.output, \
-           g_control.pid.outputKp, g_control.pid.outputKi, g_control.pid.outputKd);
-    printf("pid_t err : angleError:%f, _Angle:%d, realAngle:%d\r\n", g_control.pid.angleError, g_control._Angle, g_control.realAngle);
+    // printf("pid_t out : output:%f, outputKp:%f, outputKi:%f,  outputKd:%f\r\n", g_control.pid.output, \
+    //        g_control.pid.outputKp, g_control.pid.outputKi, g_control.pid.outputKd);
+    printf("pid_t:_Angle:%d, realAngle:%d\r\n", g_control._Angle, g_control.realAngle);
 }
 
 /**
- * 打印PID参数
+ * 打印当前所处角度
 */
 void MotorPrintAngle(void)
 {
@@ -193,7 +194,7 @@ void MotorPrintAngle(void)
 }
 
 /**
- * 打印当前所处角度
+ * 打印PID参数
 */
 void MotorPrintPidCoeff(void)
 {
@@ -214,11 +215,10 @@ void MotorControlAngleCheck(void)
 {
     uint16_t angle;
     angle = Encode_UpdateAngle();
+    MotorUpdateRealAngle(angle);
     if (angle - g_control._Angle > 200 || angle - g_control._Angle < -200) {
         MotorSetControlStatus(STATE_RUNNING);
     }
-
-    MotorUpdateRealAngle(angle);
 }
 
 /**

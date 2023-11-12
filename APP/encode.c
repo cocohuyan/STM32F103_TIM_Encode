@@ -106,7 +106,7 @@ uint16_t Encode_UpdateAngle(void)
     int angle;
 
     counter =  TIM_GetCounter(TIM2);
-
+    // printf("TIM2 counter %x!\r\n", counter);
     /* 检查counter值 如果即将溢出需要重新设置 To do */
 
     /* angle范围 -36000 ~ 36000 */
@@ -117,7 +117,8 @@ uint16_t Encode_UpdateAngle(void)
     if ((angle < 0) && (angle >= -36000)) {
         angle += 36000;
     } else if (angle < -36000 || angle > 36000) {
-        SEGGER_RTT_printf(0,"Encode_UpdateAngle angle error %d!\r\n", angle);
+        // SEGGER_RTT_printf(0,"Encode_UpdateAngle angle error %d!\r\n", angle);
+        printf("angle error %d!\r\n", angle);
     }
 
     return (uint16_t)angle;

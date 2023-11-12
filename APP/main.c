@@ -193,16 +193,17 @@ int main(void)
     while (1) {
         uint32_t tick = GetSystick();
         angle = Encode_UpdateAngle();
+        MotorUpdateRealAngle(angle);
         if (STATE_STOP == MotorGetControlStatus()) {
-            //MotorControlAngleCheck();
+            // MotorControlAngleCheck();
 
         }
         if (tick%300 == 0 && tick !=lasttick) {
             lasttick = tick;
-            freq = IC_GetFreq();
-            duty = IC_GetDuty();
-            printf("-duty: %d!\r\n", duty);
-            printf("-freq: %d!\r\n", freq);
+            // freq = IC_GetFreq();
+            // duty = IC_GetDuty();
+            // printf("-duty: %d!\r\n", duty);
+            // printf("-freq: %d!\r\n", freq);
 
             MotroPrintDebugInfo();
         }
@@ -215,12 +216,14 @@ int main(void)
 
 void ENCODE_ZPaseProcess(void)
 {
+    uint16_t counter =  TIM_GetCounter(TIM2);
+    // printf("---------------counter: %x--------------!\r\n",counter);
     TIM_SetCounter(TIM2,TIM_ENCODE_COUNT_INIT);
     if (MotorGetControlStatus() == STATE_NO_CALIB) {
         MotorSetControlStatus(STATE_STOP);
     }
-    SEGGER_RTT_printf(0,"---------------Z pulse--------------!\r\n");
-    printf("---------------Z pulse--------------!\r\n");
+    // SEGGER_RTT_printf(0,"---------------Z pulse--------------!\r\n");
+    // printf("---------------Z pulse--------------!\r\n");
 }
 
 void EXTI2_IRQHandler(void)
